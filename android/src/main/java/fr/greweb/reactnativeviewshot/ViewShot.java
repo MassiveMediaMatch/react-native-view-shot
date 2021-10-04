@@ -11,8 +11,14 @@ import android.net.Uri;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.StringDef;
+
+import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Base64;
 import android.util.Log;
+import android.view.PixelCopy;
+import android.view.SurfaceView;
 import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
@@ -344,7 +350,21 @@ public class ViewShot implements UIBlock {
         //   Debug.waitForDebugger();
 
         final Canvas c = new Canvas(bitmap);
-        view.draw(c);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && view instanceof SurfaceView) {
+            Log.i(TAG, "view is a surfaceview, using pixelcopy");
+            PixelCopy.request((SurfaceView) view, bitmap, new PixelCopy.OnPixelCopyFinishedListener() {
+                @Override
+                public void onPixelCopyFinished(int copyResult) {
+                    if (copyResult == PixelCopy.SUCCESS) {
+                        Log.i(TAG, "done using pixelcopy");
+                    }
+                }
+            }, new Handler(Looper.getMainLooper()));
+        } else {
+            Log.i(TAG, "using legacy capture method");
+            view.draw(c);
+        }
 
         //after view is drawn, go through children
         final List<View> childrenList = getAllChildren(view);
